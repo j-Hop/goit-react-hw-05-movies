@@ -1,0 +1,9 @@
+.containerDetails {
+  display: flex;
+  flex-direction: row;
+  padding-bottom: 20px;
+  padding-top: 20px;
+}
+.image {
+  margin-right: 10px;
+}

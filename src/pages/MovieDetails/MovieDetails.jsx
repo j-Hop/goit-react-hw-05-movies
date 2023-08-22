@@ -1,98 +1,100 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
-import { ThreeDots } from 'react-loader-spinner';
-import { Link, Outlet, useLocation, useParams } from 'react-router-dom';
-import { getMovieDetails } from 'services/api';
-import { getPoster } from 'services/getImage';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import {
-  Container,
-  Description,
-  DetailsTitle,
-  Image,
-  InfoContainer,
-  MovieTitle,
-  NavItem,
-  NavLinkStyl,
-  NavList,
-} from './MovieDetails.styled';
+  Link,
+  NavLink,
+  Route,
+  Routes,
+  useLocation,
+  useParams,
+} from 'react-router-dom';
+import { onFetchMoviesDetalis } from 'service/api';
+import css from './MovieDetails.module.css';
+import Loader from 'components/Loader/Loader';
+// import Cast from 'pages/CastPage/CastPage';
+// import Reviews from 'pages/ReviewsPage/ReviewsPage';
+
+const Cast = lazy(() => import('pages/CastPage/CastPage'));
+const Reviews = lazy(() => import('pages/ReviewsPage/ReviewsPage'));
 
 const MovieDetails = () => {
-  const [movieDetails, setMovieDetails] = useState({});
-
-  const [loading, setLoading] = useState(false);
-
-  const location = useLocation();
-  const backLinkLocationRef = useRef(location.state?.from ?? '/movies');
-
   const { movieId } = useParams();
+  const apiDataMovie = `/movie/${movieId}`;
+  const [movieDetails, setMovieDetails] = useState([]);
+  const [errorMes, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const location = useLocation();
+  const backLink = useRef(location.state?.from ?? '/');
 
   useEffect(() => {
     if (!movieId) return;
-    const fetchMovieDetails = async id => {
+
+    const dataMovies = async () => {
       try {
-        setLoading(true);
-        const movieDetailsData = await getMovieDetails(id);
-        setMovieDetails(movieDetailsData);
+        setIsLoading(true);
+        const data = await onFetchMoviesDetalis(apiDataMovie);
+        setMovieDetails(data);
       } catch (error) {
-        console.log(error);
+        setError(error.message);
+        alert('ERROR:', errorMes);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-    fetchMovieDetails(movieId);
-  }, [movieId]);
 
+    dataMovies();
+  }, [apiDataMovie, errorMes, movieId]);
+
+  const {
+    poster_path,
+    id,
+    title,
+    vote_average,
+    overview,
+    genres,
+    release_date,
+  } = movieDetails;
+  const poster = poster_path
+    ? `https://image.tmdb.org/t/p/w400${poster_path}`
+    : 'https://dummyimage.com/300x450/99cccc.gifffffff&text=No%20poster!';
   return (
-    <>
-      {loading && (
-        <ThreeDots
-          height="80"
-          width="80"
-          radius="9"
-          color="#3f51b5"
-          ariaLabel="three-dots-loading"
-          wrapperStyle={{}}
-          wrapperClassName=""
-          visible={true}
-        />
-      )}
-      <Link to={backLinkLocationRef.current}>GO Back</Link>
+    <section>
+      <Link to={backLink.current}>Go back</Link>
+      {isLoading && <Loader />}
       {movieDetails && (
-        <Container>
-          <Image
-            src={getPoster(movieDetails.poster_path)}
-            alt={movieDetails.title || movieDetails.name}
-          />
-          <InfoContainer>
-            <div>
-              {' '}
-              <MovieTitle>{movieDetails.title || movieDetails.name}</MovieTitle>
-              <Description>Rating: {movieDetails.vote_average}</Description>
-              <DetailsTitle>Overview</DetailsTitle>
-              <Description>{movieDetails.overview}</Description>
-              <DetailsTitle>Genres</DetailsTitle>
-              <Description>
-                {movieDetails?.genres?.length > 0 && movieDetails?.genres
-                  ? movieDetails.genres.map(genre => genre.name).join(', ')
-                  : 'NO Genres'}
-              </Description>
-            </div>
-
-            <NavList>
-              <NavItem>
-                <NavLinkStyl to="cast">Cast</NavLinkStyl>
-              </NavItem>
-              <NavItem>
-                <NavLinkStyl to="reviews">Review</NavLinkStyl>
-              </NavItem>
-            </NavList>
-          </InfoContainer>
-        </Container>
+        <div key={id} className={css.containerDetails}>
+          <div className={css.image}>
+            {' '}
+            <img src={poster} alt={title} width="360" />
+          </div>
+          <div>
+            <h2>
+              {title}({release_date?.slice(0, 4)})
+            </h2>
+            <h3>Release date: {release_date}</h3>
+            <p>User Score: {(vote_average * 10).toFixed(0)}%</p>
+            <h3>Overview</h3>
+            <p>{overview}</p>
+            <h3>Genres</h3>
+            <p>
+              {genres?.map(genre => {
+                return <span key={genre.id}>{genre.name} </span>;
+              })}
+            </p>
+          </div>
+        </div>
       )}
-
-      <Suspense>
-        <Outlet />
+      <div>
+        <NavLink to="cast">Cast</NavLink>
+        <NavLink to="reviews">Reviews</NavLink>
+      </div>
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="cast" element={<Cast />}></Route>
+          <Route path="reviews" element={<Reviews />}></Route>
+        </Routes>
       </Suspense>
-    </>
+    </section>
   );
 };
+
 export default MovieDetails;

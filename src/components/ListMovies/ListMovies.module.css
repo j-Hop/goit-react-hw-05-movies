@@ -1,0 +1,9 @@
+.listMovies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin: 0, auto;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background-color: #e6e3e3;
+}
