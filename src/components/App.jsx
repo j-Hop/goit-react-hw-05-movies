@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+
 import Loader from './Loader/Loader';
 import css from '../pages/HomePage/HomePage.module.css';
 
